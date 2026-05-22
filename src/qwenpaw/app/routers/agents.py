@@ -33,9 +33,33 @@ from ...agents.skill_system import SkillPoolService, get_workspace_skills_dir
 from ..multi_agent_manager import MultiAgentManager
 from ...constant import WORKING_DIR
 
+from qwenpaw.enterprise.context import get_current_user
+from qwenpaw.enterprise import get_permission_provider
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agents", tags=["agents"])
+
+
+async def _check_agent_permission(action: str, agent_id: str) -> bool:
+    """Check enterprise permission for agent management operations.
+
+    Returns True if enterprise mode is not enabled, or if the
+    current user has the required permission.
+    """
+    user = get_current_user()
+    if user is None:
+        return True  # Not enterprise mode
+
+    provider = get_permission_provider()
+    if provider is None:
+        return True  # No permission service configured
+
+    return await provider.check_permission(
+        user=user,
+        action=action,
+        resource=agent_id,
+    )
 
 
 class AgentSummary(BaseModel):
@@ -285,6 +309,9 @@ async def create_agent(
     (validated for URL-safe characters, length, reserved words, and
     uniqueness).  Otherwise a random short UUID is generated.
     """
+    if not await _check_agent_permission("agent:create", "*"):
+        raise HTTPException(status_code=403, detail="Permission denied")
+
     config = load_config()
     existing_ids = set(config.agents.profiles.keys())
 
@@ -365,6 +392,9 @@ async def update_agent(
     request: Request = None,
 ) -> AgentProfileConfig:
     """Update agent configuration."""
+    if not await _check_agent_permission("agent:update", agentId):
+        raise HTTPException(status_code=403, detail="Permission denied")
+
     config = load_config()
 
     if agentId not in config.agents.profiles:
@@ -397,6 +427,9 @@ async def delete_agent(
     request: Request = None,
 ) -> dict:
     """Delete an agent."""
+    if not await _check_agent_permission("agent:delete", agentId):
+        raise HTTPException(status_code=403, detail="Permission denied")
+
     config = load_config()
 
     if agentId not in config.agents.profiles:

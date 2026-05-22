@@ -335,6 +335,23 @@ async def lifespan(  # pylint: disable=too-many-statements,too-many-branches
             plugin_loader.registry.set_plugin_http_app(app)
 
             config = load_config(get_config_path())
+
+            # ---- Enterprise features init ----
+            if config.enterprise.enabled and config.enterprise.auth.mode == "external":
+                from qwenpaw.enterprise.auth import ExternalAuthProvider, ExternalUserResolver
+                from qwenpaw.enterprise.permissions import ExternalPermissionProvider
+                from qwenpaw.enterprise import set_providers
+
+                auth_url = config.enterprise.auth.service_url
+                rbac_url = config.enterprise.rbac.service_url
+
+                set_providers(
+                    ExternalAuthProvider(service_url=auth_url),
+                    ExternalUserResolver(service_url=auth_url),
+                    ExternalPermissionProvider(service_url=rbac_url),
+                )
+                logger.info("Enterprise mode enabled (auth=%s, rbac=%s)", auth_url, rbac_url)
+
             plugin_configs = (
                 config.plugins if hasattr(config, "plugins") else {}
             )
@@ -549,6 +566,10 @@ async def lifespan(  # pylint: disable=too-many-statements,too-many-branches
         except Exception as e:
             logger.error(f"Error closing skills hub HTTP client: {e}")
 
+        # ---- Enterprise features teardown ----
+        from qwenpaw.enterprise import clear_providers
+        clear_providers()
+
         logger.info("Application shutdown complete")
 
 
@@ -563,6 +584,12 @@ app = FastAPI(
 app.add_middleware(AgentContextMiddleware)
 
 app.add_middleware(AuthMiddleware)
+
+# Enterprise middleware — cleans up UserContext after each request.
+# Must be registered AFTER AuthMiddleware so the context still exists
+# when the request is processed.
+from qwenpaw.enterprise.context import EnterpriseMiddleware
+app.add_middleware(EnterpriseMiddleware)
 
 # Apply CORS middleware if CORS_ORIGINS is set
 if CORS_ORIGINS:

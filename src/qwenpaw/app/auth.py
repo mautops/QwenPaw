@@ -609,6 +609,23 @@ class AuthMiddleware(BaseHTTPMiddleware):
             )
 
         request.state.user = user
+
+        # Enterprise multi-user: set UserContext from external auth service.
+        # When enterprise mode is not enabled, is_enterprise_mode() returns
+        # False and this block is skipped entirely.
+        from qwenpaw.enterprise import get_auth_provider
+        from qwenpaw.enterprise.context import set_current_user
+
+        auth_provider = get_auth_provider()
+        if auth_provider is not None:
+            try:
+                enterprise_user = await auth_provider.authenticate(request)
+                if enterprise_user is not None:
+                    set_current_user(enterprise_user)
+                    request.state.user = enterprise_user.user_id
+            except Exception:
+                pass  # Fail open: fall back to QwenPaw's own auth
+
         return await call_next(request)
 
     @staticmethod

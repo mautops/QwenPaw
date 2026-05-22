@@ -262,6 +262,13 @@ class ToolGuardMixin:
         )
 
         if guard_result is None or not guard_result.findings:
+            if not await self._check_enterprise_permission(
+                tool_name, tool_input,
+            ):
+                return _GuardAction(
+                    "auto_denied", tool_name, tool_input,
+                    guard_result=self._create_permission_denied_result(tool_name),
+                )
             return None
 
         from qwenpaw.security.tool_guard.utils import log_findings
@@ -334,6 +341,69 @@ class ToolGuardMixin:
             params=tool_input,
             findings=[finding],
             guardians_used=["strict_mode"],
+        )
+
+    async def _check_enterprise_permission(
+        self, tool_name: str, tool_input: dict,
+    ) -> bool:
+        """查询企业权限服务，判断当前用户是否可以执行此工具。
+
+        Returns True if:
+        - Enterprise mode is not enabled (no current user)
+        - Permission provider is not configured
+        - Permission service returns allowed=True
+        """
+        from qwenpaw.enterprise.context import get_current_user
+        from qwenpaw.enterprise.permissions import get_permission_provider
+
+        user = get_current_user()
+        if user is None:
+            return True  # Not enterprise mode — allow
+
+        provider = get_permission_provider()
+        if provider is None:
+            return True  # No permission service configured — allow
+
+        return await provider.check_permission(
+            user=user,
+            action=f"tool:{tool_name}",
+            resource=tool_name,
+        )
+
+    def _create_permission_denied_result(self, tool_name: str):
+        """Create a guard result for enterprise permission denial."""
+        from qwenpaw.security.tool_guard.models import (
+            GuardSeverity,
+            GuardThreatCategory,
+            GuardFinding,
+            ToolGuardResult,
+        )
+        import uuid as _uuid
+
+        finding = GuardFinding(
+            id=str(_uuid.uuid4())[:8],
+            rule_id="enterprise_rbac",
+            category=GuardThreatCategory.RESOURCE_ABUSE,
+            severity=GuardSeverity.HIGH,
+            title="Enterprise Permission Denied",
+            description=(
+                f"User does not have enterprise permission to use tool '{tool_name}'"
+            ),
+            tool_name=tool_name,
+            param_name=None,
+            matched_value=None,
+            matched_pattern=None,
+            snippet=None,
+            remediation="Contact your administrator to request access",
+            guardian="enterprise_rbac",
+            metadata={"reason": "enterprise_permission_denied"},
+        )
+
+        return ToolGuardResult(
+            tool_name=tool_name,
+            params={},
+            findings=[finding],
+            guardians_used=["enterprise_rbac"],
         )
 
     async def _execute_guard_action(
@@ -488,6 +558,12 @@ class ToolGuardMixin:
 
         # Execute or deny based on decision
         if decision == ApprovalDecision.APPROVED:
+            if not await self._check_enterprise_permission(
+                tool_name, tool_call.get("input", {}),
+            ):
+                return await self._acting_denied(
+                    tool_call, tool_name, guard_result,
+                )
             logger.info(
                 "Tool '%s' approved by user, executing...",
                 tool_name,

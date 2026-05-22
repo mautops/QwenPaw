@@ -87,6 +87,8 @@ from .ai_card import (
     ActiveAICard,
 )
 from .utils import guess_suffix_from_file_content
+from ....enterprise.context import set_current_user
+from ....enterprise import get_user_resolver
 
 if TYPE_CHECKING:
     from agentscope_runtime.engine.schemas.agent_schemas import AgentRequest
@@ -389,6 +391,18 @@ class DingTalkChannel(BaseChannel):
     async def _before_consume_process(self, request: "AgentRequest") -> None:
         """Save session_webhook, send processing reaction, pre-create card."""
         meta = getattr(request, "channel_meta", None) or {}
+
+        # Enterprise: resolve channel user to enterprise user
+        resolver = get_user_resolver()
+        if resolver is not None:
+            sender_staff_id = meta.get("sender_staff_id") or ""
+            if sender_staff_id:
+                user_info = await resolver.resolve(
+                    channel="dingtalk",
+                    channel_user_id=sender_staff_id,
+                )
+                if user_info is not None:
+                    set_current_user(user_info)
 
         # Store session_webhook for cron/proactive send
         session_webhook = self._get_session_webhook(meta)

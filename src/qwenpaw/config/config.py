@@ -19,6 +19,7 @@ from agentscope_runtime.engine.schemas.exception import (
 )
 
 from .timezone import detect_system_timezone
+from qwenpaw.enterprise.config import EnterpriseConfig
 from ..constant import (
     HEARTBEAT_DEFAULT_EVERY,
     HEARTBEAT_DEFAULT_TARGET,
@@ -1750,6 +1751,10 @@ class Config(BaseModel):
         default_factory=detect_system_timezone,
         description="User IANA timezone (e.g. Asia/Shanghai). "
         "Defaults to the system timezone.",
+    )
+    enterprise: EnterpriseConfig = Field(
+        default_factory=EnterpriseConfig,
+        description="Enterprise multi-user features configuration",
     )
     plugins: Dict[str, Dict[str, Any]] = Field(
         default_factory=dict,
