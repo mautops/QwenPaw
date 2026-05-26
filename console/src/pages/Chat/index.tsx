@@ -22,6 +22,7 @@ import type { ProviderInfo, ModelInfo } from "../../api/types";
 import ModelSelector from "./ModelSelector";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAgentStore } from "../../stores/agentStore";
+import { useCodingMode } from "../../stores/codingModeStore";
 import { useChatAnywhereInput } from "@agentscope-ai/chat";
 import styles from "./index.module.less";
 import { IconButton } from "@agentscope-ai/design";
@@ -63,6 +64,7 @@ import {
   type CopyableResponse,
   type RuntimeLoadingBridgeApi,
 } from "./utils";
+import { openExternalLink } from "../../utils/openExternalLink";
 
 const CHAT_ATTACHMENT_MAX_MB = 10;
 
@@ -601,6 +603,15 @@ export default function ChatPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDark } = useTheme();
+  const { codingMode, initialized } = useCodingMode();
+
+  // Redirect to /coding when coding mode is active
+  useEffect(() => {
+    if (initialized && codingMode) {
+      navigate("/coding", { replace: true });
+    }
+  }, [initialized, codingMode, navigate]);
+
   const chatId = useMemo(() => {
     const match = location.pathname.match(/^\/chat\/(.+)$/);
     return match?.[1];
@@ -787,6 +798,7 @@ export default function ChatPage() {
   const pendingClearHistoryRef = useRef(false);
   const whisperSpeechRef = useRef<WhisperSpeechButtonRef>(null);
   const [whisperEnabled, setWhisperEnabled] = useState(false);
+  const [whisperChecked, setWhisperChecked] = useState(false);
 
   // Check if Whisper transcription is configured
   useEffect(() => {
@@ -795,7 +807,8 @@ export default function ChatPage() {
       .then((res) => {
         setWhisperEnabled(res.transcription_provider_type !== "disabled");
       })
-      .catch(() => setWhisperEnabled(false));
+      .catch(() => setWhisperEnabled(false))
+      .finally(() => setWhisperChecked(true));
   }, []);
 
   const handleWhisperTranscription = useCallback((text: string) => {
@@ -813,6 +826,15 @@ export default function ChatPage() {
 
   useMessageHistoryNavigation(chatRef, isChatActive, isComposingRef);
   useChatInputDraft(isChatActive);
+
+  const onFileCardClick = useCallback(
+    (fileInfo: { name?: string; size?: number; url?: string }) => {
+      if (fileInfo.url) {
+        openExternalLink(fileInfo.url);
+      }
+    },
+    [],
+  );
 
   // Shortcut key for voice recording (Ctrl+Shift+M or Cmd+Shift+M on Mac)
   useEffect(() => {
@@ -1162,7 +1184,7 @@ export default function ChatPage() {
       sender: {
         ...(i18nConfig as any)?.sender,
         beforeSubmit: handleBeforeSubmit,
-        allowSpeech: !whisperEnabled,
+        allowSpeech: whisperChecked && !whisperEnabled,
         prefix: whisperEnabled ? (
           <WhisperSpeechButton
             ref={whisperSpeechRef}
@@ -1212,11 +1234,13 @@ export default function ChatPage() {
               scheduleHistoryClear();
             }
           }
+
           return payload as any;
         },
         replaceMediaURL: (url: string) => {
           return toDisplayUrl(url);
         },
+        onFileCardClick,
         cancel(data: { session_id: string }) {
           const resolvedChatId =
             sessionApi.getRealIdForSession(data.session_id) ?? data.session_id;
@@ -1273,6 +1297,10 @@ export default function ChatPage() {
     toolRenderConfig,
     scheduleHistoryClear,
     planEnabled,
+    onFileCardClick,
+    whisperChecked,
+    whisperEnabled,
+    handleWhisperTranscription,
   ]);
 
   return (
