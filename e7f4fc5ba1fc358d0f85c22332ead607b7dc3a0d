@@ -1,0 +1,24 @@
+src/qwenpaw/app/routers/console.py
+  0926dbc2f38fb8d7 425
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "e7f4fc5ba1fc358d0f85c22332ead607b7dc3a0d",
+  "prompts": {
+    "0926dbc2f38fb8d7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ae6028c2-6a45-4cdc-bae1-f1472114aa60",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0,
+      "messages_url": "https://gitai.gz.cvte.cn/cas/b74bcbed1b9fd2f9fa54613d7eed682636b056f6f501ef6fc02a6b87536f8ace"
+    }
+  }
+}
