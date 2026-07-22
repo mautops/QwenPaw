@@ -1,0 +1,23 @@
+src/qwenpaw/app/protocol/agui/router.py
+  8da6922b6fbab12a 2,30-32,58,62,64-66,71-76,78-79,81,83-84,89,91,102,107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "d76ebf43017df36cf200a896672929846c59223a",
+  "prompts": {
+    "8da6922b6fbab12a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d18245f6-9d13-4120-9ce9-0eb7365466ab",
+        "model": "glm-4.7"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 28,
+      "total_deletions": 391,
+      "accepted_lines": 575,
+      "overriden_lines": 0
+    }
+  }
+}
