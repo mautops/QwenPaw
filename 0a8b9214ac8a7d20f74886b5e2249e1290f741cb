@@ -1,0 +1,25 @@
+src/qwenpaw/app/protocol/agui/__init__.py
+  8da6922b6fbab12a 1-6
+src/qwenpaw/app/protocol/__init__.py
+  8da6922b6fbab12a 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "0a8b9214ac8a7d20f74886b5e2249e1290f741cb",
+  "prompts": {
+    "8da6922b6fbab12a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d18245f6-9d13-4120-9ce9-0eb7365466ab",
+        "model": "glm-4.7"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 101,
+      "total_deletions": 5,
+      "accepted_lines": 166,
+      "overriden_lines": 0
+    }
+  }
+}
