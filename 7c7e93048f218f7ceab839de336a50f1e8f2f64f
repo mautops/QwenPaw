@@ -1,0 +1,23 @@
+src/qwenpaw/app/protocol/agui/converter.py
+  8da6922b6fbab12a 128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "7c7e93048f218f7ceab839de336a50f1e8f2f64f",
+  "prompts": {
+    "8da6922b6fbab12a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d18245f6-9d13-4120-9ce9-0eb7365466ab",
+        "model": "glm-4.7"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 996,
+      "overriden_lines": 0
+    }
+  }
+}
