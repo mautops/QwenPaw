@@ -1,0 +1,36 @@
+docs/superpowers/specs/2026-07-22-agui-protocol-support-design.md
+  8da6922b6fbab12a 1-295
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "b0b5fa87d6c32d6c54b934ee88e3a54849ec7068",
+  "prompts": {
+    "57fa87d272f13829": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8d034fe0-5b81-4526-b1ee-ef9a1860183a",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 32114,
+      "total_deletions": 0,
+      "accepted_lines": 32114,
+      "overriden_lines": 0
+    },
+    "8da6922b6fbab12a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d18245f6-9d13-4120-9ce9-0eb7365466ab",
+        "model": "glm-4.7"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 298,
+      "total_deletions": 3,
+      "accepted_lines": 295,
+      "overriden_lines": 0
+    }
+  }
+}
