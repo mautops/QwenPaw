@@ -1,0 +1,25 @@
+src/qwenpaw/app/protocol/agui/converter.py
+  8da6922b6fbab12a 10,24,30,33,44-45,55,57-59,75,77,81-84,101,117-121,124,136,149,162,168,174-177,186,197,202-210,217,226,240-242,244-268,271-274,277,282,285-286,288-289,292-293,296,301-310
+src/qwenpaw/app/protocol/agui/router.py
+  8da6922b6fbab12a 5,17,33-57,60,63,67-68,71,74-86,88-89,95-96,105,112,119,129-131,138,140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "1ede0da065b0ee356ce88ba949dc1f0f9ebbb67b",
+  "prompts": {
+    "8da6922b6fbab12a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d18245f6-9d13-4120-9ce9-0eb7365466ab",
+        "model": "glm-4.7"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 702,
+      "total_deletions": 128,
+      "accepted_lines": 702,
+      "overriden_lines": 0
+    }
+  }
+}
