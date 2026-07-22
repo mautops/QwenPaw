@@ -1,0 +1,23 @@
+src/qwenpaw/app/_app.py
+  8da6922b6fbab12a 226-228,327-329,347-351,485-486
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "9e0c48de355f64be6d475d9d0dcab7368aa4a482",
+  "prompts": {
+    "8da6922b6fbab12a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d18245f6-9d13-4120-9ce9-0eb7365466ab",
+        "model": "glm-4.7"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 13,
+      "total_deletions": 6,
+      "accepted_lines": 563,
+      "overriden_lines": 0
+    }
+  }
+}
