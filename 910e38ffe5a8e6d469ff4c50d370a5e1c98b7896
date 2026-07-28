@@ -1,0 +1,25 @@
+src/qwenpaw/runtime/runtime.py
+  2ff69d1d7e90a5bb 226-228
+src/qwenpaw/app/protocol/agui/router.py
+  2ff69d1d7e90a5bb 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.4",
+  "base_commit_sha": "910e38ffe5a8e6d469ff4c50d370a5e1c98b7896",
+  "prompts": {
+    "2ff69d1d7e90a5bb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "adb8f873-317e-4727-b82f-190abe2e9134",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 18565,
+      "overriden_lines": 0
+    }
+  }
+}
