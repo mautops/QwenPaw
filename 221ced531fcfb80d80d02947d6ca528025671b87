@@ -1,0 +1,23 @@
+src/qwenpaw/runtime/builder.py
+  3e758222c65d13c0 18,21-22,26-43,518-525,527-567,569-570,574,577,579,581,583,585,591-594
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.4",
+  "base_commit_sha": "221ced531fcfb80d80d02947d6ca528025671b87",
+  "prompts": {
+    "3e758222c65d13c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6737dc63-ab74-4b04-904f-f2f192202381",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 82,
+      "total_deletions": 30,
+      "accepted_lines": 1856,
+      "overriden_lines": 0
+    }
+  }
+}
