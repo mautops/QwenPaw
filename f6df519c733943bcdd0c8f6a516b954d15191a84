@@ -1,0 +1,44 @@
+src/qwenpaw/app/workspace/workspace.py
+  2ff69d1d7e90a5bb 13,277,280-294,543,554
+src/qwenpaw/app/protocol/agui/router.py
+  2ff69d1d7e90a5bb 2,4,20-23,31-34,37-38,60-63,87-91,97-102,104,108-120,122,124-163,171-173,189-190,192-195
+src/qwenpaw/runtime/runtime.py
+  2ff69d1d7e90a5bb 53,123-124,133,140-141,164-165,186-190,208-311,434
+pyproject.toml
+  2ff69d1d7e90a5bb 49
+src/qwenpaw/runtime/executor.py
+  2ff69d1d7e90a5bb 11,30-31,34,61-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.4",
+  "base_commit_sha": "f6df519c733943bcdd0c8f6a516b954d15191a84",
+  "prompts": {
+    "2ff69d1d7e90a5bb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "adb8f873-317e-4727-b82f-190abe2e9134",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 18821,
+      "total_deletions": 75,
+      "accepted_lines": 18807,
+      "overriden_lines": 0
+    },
+    "8da6922b6fbab12a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d18245f6-9d13-4120-9ce9-0eb7365466ab",
+        "model": "glm-4.7"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  }
+}
