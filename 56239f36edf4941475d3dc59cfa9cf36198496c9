@@ -1,0 +1,27 @@
+src/qwenpaw/app/protocol/agui/__init__.py
+  3e758222c65d13c0 7
+src/qwenpaw/app/protocol/agui/router.py
+  3e758222c65d13c0 7,98-101,122-124
+src/qwenpaw/app/protocol/agui/converter.py
+  3e758222c65d13c0 10,36,57,136-137,205-206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.4",
+  "base_commit_sha": "56239f36edf4941475d3dc59cfa9cf36198496c9",
+  "prompts": {
+    "3e758222c65d13c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6737dc63-ab74-4b04-904f-f2f192202381",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 9,
+      "accepted_lines": 1790,
+      "overriden_lines": 0
+    }
+  }
+}
