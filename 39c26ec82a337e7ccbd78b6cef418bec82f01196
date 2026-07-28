@@ -1,0 +1,23 @@
+src/qwenpaw/agents/tools/shell.py
+  3e758222c65d13c0 22,496-529,616-629,672,674-675,677,679-680,684-685,687-688,787,789-791,795-796,800-801,803-804
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.4",
+  "base_commit_sha": "39c26ec82a337e7ccbd78b6cef418bec82f01196",
+  "prompts": {
+    "3e758222c65d13c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6737dc63-ab74-4b04-904f-f2f192202381",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 69,
+      "total_deletions": 10,
+      "accepted_lines": 1843,
+      "overriden_lines": 0
+    }
+  }
+}
