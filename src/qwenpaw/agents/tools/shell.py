@@ -19,6 +19,7 @@ from agentscope.message import TextBlock, ToolResultState
 from agentscope.tool import ToolChunk
 
 from ...config.context import (
+    get_current_request_context,
     get_current_shell_command_executable,
     get_current_shell_command_timeout,
     get_current_workspace_dir,
@@ -492,6 +493,40 @@ def _is_dangerous_self_kill(cmd: str) -> bool:
     return False
 
 
+_ENV_VAR_KEY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _env_var_name(key: str) -> str | None:
+    """Return the uppercased key if it is a valid environment-variable
+    name, otherwise None.
+
+    Only keys matching ``[A-Za-z_][A-Za-z0-9_]*`` are accepted so that
+    arbitrary metadata keys (e.g. ``tenant-id`` or ``../path``) cannot
+    produce invalid or dangerous env-var names.
+    """
+    upper = str(key).upper()
+    return upper if _ENV_VAR_KEY_RE.match(upper) else None
+
+
+def _sanitize_env_values(output: str, injected_env: dict[str, str]) -> str:
+    """Replace QWENPAW_* env var values in *output* with ``***REDACTED***``.
+
+    Only inspects keys that start with ``QWENPAW_`` (the prefix used for
+    request-context injection).  Long values are truncated to 64 chars
+    for the replacement scan to bound worst-case complexity.
+    """
+    for key, value in injected_env.items():
+        if not key.startswith("QWENPAW_"):
+            continue
+        if not value:
+            continue
+        # Truncate long values for bounded replacement scan.
+        needle = value[:64]
+        if needle in output:
+            output = output.replace(needle, "***REDACTED***")
+    return output
+
+
 # pylint: disable=too-many-branches, too-many-statements
 @tool_descriptor(
     requires_sandbox=("shell_exec",),
@@ -578,6 +613,20 @@ async def execute_shell_command(
 
     # Ensure the venv Python is on PATH for subprocesses
     env = os.environ.copy()
+    # Inject request_context as QWENPAW_* environment variables for
+    # CLI tools and SKILL scripts.  Only scalar values with valid
+    # env-var-safe keys are exposed.
+    _injected_env: dict[str, str] = {}
+    rc = get_current_request_context()
+    if rc:
+        for key, value in rc.items():
+            if not isinstance(value, (str, int, float, bool)):
+                continue
+            env_key = _env_var_name(key)
+            if env_key:
+                env_name = f"QWENPAW_{env_key}"
+                env[env_name] = str(value)
+                _injected_env[env_name] = str(value)
     python_bin_dir = str(Path(sys.executable).parent)
     existing_path = env.get("PATH", "")
     if existing_path:
@@ -620,18 +669,23 @@ async def execute_shell_command(
                 ],
                 metadata={"sandbox_violation": result.sandbox_violation},
             )
+        _sanitize = _sanitize_env_values if _injected_env else (lambda s, _e: s)
         if result.exit_code == 0:
-            response_text = (
-                result.stdout or "Command executed successfully (no output)."
+            stdout_s = _sanitize(
+                result.stdout or "", _injected_env,
             )
+            response_text = stdout_s or "Command executed successfully (no output)."
             if result.stderr:
-                response_text += f"\n[stderr]\n{result.stderr}"
+                stderr_s = _sanitize(result.stderr, _injected_env)
+                response_text += f"\n[stderr]\n{stderr_s}"
         else:
             parts = [f"Command failed with exit code {result.exit_code}."]
             if result.stdout:
-                parts.append(f"\n[stdout]\n{result.stdout}")
+                stdout_s = _sanitize(result.stdout, _injected_env)
+                parts.append(f"\n[stdout]\n{stdout_s}")
             if result.stderr:
-                parts.append(f"\n[stderr]\n{result.stderr}")
+                stderr_s = _sanitize(result.stderr, _injected_env)
+                parts.append(f"\n[stderr]\n{stderr_s}")
             response_text = "".join(parts)
         return ToolChunk(
             is_last=True,
@@ -730,19 +784,24 @@ async def execute_shell_command(
                     stdout_str = ""
                     stderr_str = stderr_suffix
 
+        _sanitize = _sanitize_env_values if _injected_env else (lambda s, _e: s)
         if returncode == 0:
-            if stdout_str:
-                response_text = stdout_str
+            stdout_s = _sanitize(stdout_str, _injected_env)
+            if stdout_s:
+                response_text = stdout_s
             else:
                 response_text = "Command executed successfully (no output)."
             if stderr_str:
-                response_text += f"\n[stderr]\n{stderr_str}"
+                stderr_s = _sanitize(stderr_str, _injected_env)
+                response_text += f"\n[stderr]\n{stderr_s}"
         else:
             response_parts = [f"Command failed with exit code {returncode}."]
             if stdout_str:
-                response_parts.append(f"\n[stdout]\n{stdout_str}")
+                stdout_s = _sanitize(stdout_str, _injected_env)
+                response_parts.append(f"\n[stdout]\n{stdout_s}")
             if stderr_str:
-                response_parts.append(f"\n[stderr]\n{stderr_str}")
+                stderr_s = _sanitize(stderr_str, _injected_env)
+                response_parts.append(f"\n[stderr]\n{stderr_s}")
             response_text = "".join(response_parts)
 
         return ToolChunk(
