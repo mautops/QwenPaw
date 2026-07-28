@@ -1,0 +1,23 @@
+docs/superpowers/specs/2026-07-28-user-context-passthrough-design.md
+  3e758222c65d13c0 44-45,48-51,54-65,68-70,114,118-135,138-141,148-157,161,163-170
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.4",
+  "base_commit_sha": "18333f3f7f030361ed5df9c772af09c2514e05fc",
+  "prompts": {
+    "3e758222c65d13c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6737dc63-ab74-4b04-904f-f2f192202381",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 63,
+      "total_deletions": 14,
+      "accepted_lines": 1837,
+      "overriden_lines": 0
+    }
+  }
+}
