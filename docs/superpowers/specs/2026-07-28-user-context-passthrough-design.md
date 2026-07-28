@@ -41,14 +41,32 @@ AgentBuilder._build_request_context()
 
 **File**: `src/qwenpaw/runtime/builder.py` — `_build_request_context()`
 
-After line 518 (`rc.update(_payload_ctx)`), add:
+Metadata is merged **before** security-critical fields are set, so callers cannot
+overwrite `session_id`, `agent_id`, `root_session_id`, etc.
 
 ```python
-# Merge AgentRequest.metadata into request_context for downstream passthrough.
+# Merge AgentRequest.metadata first (user-owned fields).
+# Reject oversized payloads to prevent env-var DoS.
+_MAX_METADATA_JSON_BYTES = 64 * 1024  # 64 KiB
+
 _request_metadata = getattr(request, "metadata", None) if request else None
 if isinstance(_request_metadata, dict):
-    rc.update(_request_metadata)
+    _validate_metadata_size(_request_metadata)
+    for key, value in _request_metadata.items():
+        if not key.startswith("_"):      # block _-prefixed internal keys
+            rc[key] = value
+
+# Security-critical fields are set AFTER the merge so they cannot be
+# overwritten by caller-supplied metadata.
+rc["session_id"] = getattr(ctx, "session_id", "") or ""
+rc["agent_id"] = getattr(ctx, "agent_id", "") or ""
+rc["root_session_id"] = getattr(ctx, "root_session_id", "") or ""
+rc["root_agent_id"] = getattr(ctx, "root_agent_id", "") or ""
+# ... (remaining existing fields set the same way)
 ```
+
+> **Change summary**: Move the initial `rc` dict literal construction to this
+> two-phase pattern: metadata merge first, then critical field assignment.
 
 ### 3.2 ContextVar: Unified read access for tool functions
 
@@ -93,32 +111,63 @@ After `env = os.environ.copy()` (line 580), add:
 
 ```python
 # Inject request_context as QWENPAW_* environment variables for CLI/SKILL.
+# Only scalar values with valid env-var-safe keys are exposed.
 rc = get_current_request_context()
 if rc:
     for key, value in rc.items():
-        if isinstance(value, (str, int, float, bool)):
-            env[f"QWENPAW_{key.upper()}"] = str(value)
+        if not isinstance(value, (str, int, float, bool)):
+            continue
+        env_key = _env_var_name(key)
+        if env_key:
+            env[f"QWENPAW_{env_key}"] = str(value)
 ```
 
-### 3.4 (Optional) Output sanitization
+Add a helper at module level:
+
+```python
+import re as _re
+
+_ENV_VAR_KEY_RE = _re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+def _env_var_name(key: str) -> str | None:
+    """Return the uppercased key if it is a valid env-var name, else None."""
+    upper = str(key).upper()
+    return upper if _ENV_VAR_KEY_RE.match(upper) else None
+```
+
+> Keys like `tenant-id` or `../path` are silently skipped — they cannot form
+> valid environment variable names.
+
+### 3.4 Output sanitization (required)
 
 After command execution and before returning `ToolChunk`, scan output text for
 values of `QWENPAW_*` environment variables and replace occurrences with
 `***REDACTED***`. This prevents the LLM from reading user context via the `env`
 command.
 
-Implementation approach: add a helper function that takes the command output
-string and the env vars dict, and returns sanitized output with user-context
-values masked.
+```python
+def _sanitize_env_values(output: str, env: dict[str, str]) -> str:
+    """Replace QWENPAW_* env var values in output with ***REDACTED***."""
+    for key, value in env.items():
+        if key.startswith("QWENPAW_") and value:
+            output = output.replace(value, "***REDACTED***")
+    return output
+```
+
+Called on stdout and stderr before assembling the `ToolChunk` response.
 
 ## 4. Security Considerations
 
-| Risk | Analysis | Mitigation |
+| Risk | Severity | Mitigation |
 |------|----------|------------|
-| Client forges identity | Current trust model already assumes the caller (Console/Channel) authenticates users; `user_id` is not re-verified. Pre-existing, not introduced by this change. | Out of scope |
-| LLM reads via `env` command | Shell output may contain env var values | Output sanitization (section 3.4) |
-| LLM injects via tool parameters | Metadata could theoretically contain values the LLM uses as tool args | Metadata is programmatic-only; LLM never sees it |
-| Metadata overwrites critical keys | `rc.update(metadata)` may override `session_id`, `agent_id` | Metadata merge happens after existing field population; callers own correctness of their metadata keys |
+| Metadata overwrites `session_id`/`agent_id`/`root_session_id` | 🔴 High | Set critical fields AFTER metadata merge (section 3.1) |
+| LLM reads user context via `env` command | 🟡 Medium | Output sanitization masks `QWENPAW_*` values in shell output (section 3.4) |
+| Invalid env-var keys (`tenant-id`, `../path`) | 🟡 Medium | Env-var-safe key regex filter — invalid keys silently skipped (section 3.3) |
+| Metadata too large (DoS via oversized env) | 🟡 Medium | Reject metadata dicts whose JSON serialization exceeds 64 KiB |
+| `_`-prefixed internal key injection | 🟡 Medium | Block keys starting with `_` in metadata merge (section 3.1) |
+| Client forges identity | 🟢 Low | Existing trust model; not introduced by this change |
+| CLI logs env vars to files | 🟢 Low | Caller responsibility; document in usage guide |
+| ContextVar leak across requests | 🟢 Low | asyncio task isolation already handles this |
 
 ## 5. Unchanged Components
 
