@@ -190,3 +190,32 @@ def set_current_agent_state(state: AgentState | None) -> None:
         state: AgentState instance to store in context.
     """
     current_agent_state.set(state)
+
+
+# Context variable for per-request passthrough context.
+# Set by AgentBuilder._build_request_context() during the agent-build phase
+# so that tool functions (shell, file_io, browser, etc.) can read caller
+# identity and custom metadata without depending on the LLM-visible prompt.
+current_request_context: ContextVar[dict[str, Any] | None] = ContextVar(
+    "current_request_context",
+    default=None,
+)
+
+
+def get_current_request_context() -> dict[str, Any] | None:
+    """Get the current request context dict, or None if not set.
+
+    Returns:
+        The per-request context dict containing user_id, channel,
+        session_id, and any custom metadata fields, or None.
+    """
+    return current_request_context.get()
+
+
+def set_current_request_context(ctx: dict[str, Any] | None) -> None:
+    """Set the current request context dict.
+
+    Args:
+        ctx: Per-request context dict.  Set to None to clear.
+    """
+    current_request_context.set(ctx)
