@@ -15,9 +15,30 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from ..agents.acp.meta import ACP_CODING_PROJECT_META_KEY
+from ..config.context import set_current_request_context
 from ..utils.io_utils import run_sync_io
 
+import json as _json
+
 _logger = logging.getLogger(__name__)
+
+
+_MAX_METADATA_JSON_BYTES = 64 * 1024  # 64 KiB
+
+
+def _validate_metadata_size(metadata: dict[str, Any]) -> None:
+    """Reject metadata dicts whose JSON exceeds a size limit."""
+    try:
+        size = len(_json.dumps(metadata, default=str, ensure_ascii=False))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"AgentRequest.metadata is not JSON-serializable: {exc}",
+        ) from exc
+    if size > _MAX_METADATA_JSON_BYTES:
+        raise ValueError(
+            f"AgentRequest.metadata too large: {size} bytes "
+            f"(max {_MAX_METADATA_JSON_BYTES})",
+        )
 
 
 class AgentBuilder:
@@ -494,52 +515,83 @@ class AgentBuilder:
 
     @staticmethod
     def _build_request_context(ctx: Any) -> dict[str, Any]:
+        """Build per-request context dict with metadata-first merge.
+
+        Caller-supplied metadata (AgentRequest.metadata) is merged into the
+        context FIRST so that user-owned fields like user_id, user_name, and
+        custom keys are available downstream.  Security-critical fields
+        (session_id, agent_id, root_session_id, root_agent_id) are assigned
+        AFTER the merge and cannot be overwritten by metadata.
+        """
         request = getattr(ctx, "request", None)
-        rc: dict[str, Any] = {
-            "session_id": getattr(ctx, "session_id", "") or "",
-            "agent_id": getattr(ctx, "agent_id", "") or "",
-            "channel": (
-                (getattr(request, "channel", None) or "") if request else ""
-            ),
-            "user_id": (
-                (getattr(request, "user_id", None) or "") if request else ""
-            ),
-            "root_session_id": getattr(ctx, "root_session_id", "") or "",
-            "root_agent_id": getattr(ctx, "root_agent_id", "") or "",
-        }
-        _ws = getattr(ctx, "workspace_dir", None)
-        if _ws is not None:
-            rc.setdefault("workspace_dir", str(_ws))
-        app_services = getattr(ctx, "app_services", None)
-        if app_services is not None:
-            rc["approval_coordinator"] = getattr(
-                app_services,
-                "approval_coordinator",
-                None,
-            )
-            rc["tool_coordinator"] = getattr(
-                app_services,
-                "tool_coordinator",
-                None,
-            )
+
+        rc: dict[str, Any] = {}
+
+        # ── Phase 1: user-owned metadata (merged first) ──
+        _request_metadata = getattr(request, "metadata", None) if request else None
+        if isinstance(_request_metadata, dict):
+            _validate_metadata_size(_request_metadata)
+            for key, value in _request_metadata.items():
+                if not key.startswith("_"):      # block _-prefixed internal keys
+                    rc[key] = value
+
+        # ── Phase 2: channel metadata ──
         _channel_meta = (
             getattr(request, "channel_meta", None) if request else None
         )
         if isinstance(_channel_meta, dict):
             user_name = _channel_meta.get("user_name")
             if user_name:
-                rc["user_name"] = user_name
-            rc["channel_meta"] = _channel_meta
+                rc.setdefault("user_name", user_name)
+            rc.setdefault("channel_meta", _channel_meta)
+
+        # ── Phase 3: request_context payload (approval_level overrides etc.) ──
+        _payload_ctx = (
+            getattr(request, "request_context", None) if request else None
+        )
+        if isinstance(_payload_ctx, dict):
+            for key, value in _payload_ctx.items():
+                rc.setdefault(key, value)
+
+        # ── Phase 4: security-critical fields (set last — cannot be overwritten)──
+        rc["session_id"] = getattr(ctx, "session_id", "") or ""
+        rc["agent_id"] = getattr(ctx, "agent_id", "") or ""
+        rc["root_session_id"] = getattr(ctx, "root_session_id", "") or ""
+        rc["root_agent_id"] = getattr(ctx, "root_agent_id", "") or ""
+        rc["channel"] = (
+            (getattr(request, "channel", None) or "") if request else ""
+        )
+        # user_id from request is the fallback; metadata-supplied user_id takes
+        # precedence if present (set in Phase 1 via setdefault-adjacent merge).
+        if "user_id" not in rc:
+            rc["user_id"] = (
+                (getattr(request, "user_id", None) or "") if request else ""
+            )
+
+        _ws = getattr(ctx, "workspace_dir", None)
+        if _ws is not None:
+            rc.setdefault("workspace_dir", str(_ws))
+
+        app_services = getattr(ctx, "app_services", None)
+        if app_services is not None:
+            rc.setdefault(
+                "approval_coordinator",
+                getattr(app_services, "approval_coordinator", None),
+            )
+            rc.setdefault(
+                "tool_coordinator",
+                getattr(app_services, "tool_coordinator", None),
+            )
+
         rc["_channel_instance"] = getattr(
             request,
             "channel_instance",
             None,
         )
-        _payload_ctx = (
-            getattr(request, "request_context", None) if request else None
-        )
-        if isinstance(_payload_ctx, dict):
-            rc.update(_payload_ctx)
+
+        # ── Publish to ContextVar so tool functions can read it ──
+        set_current_request_context(rc)
+
         return rc
 
     @staticmethod
