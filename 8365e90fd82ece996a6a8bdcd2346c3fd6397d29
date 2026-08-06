@@ -1,0 +1,25 @@
+console/src/pages/Inbox/hooks/useInboxData.ts
+  519abaabdbdae8de 11-15,253,258-262
+console/src/pages/Inbox/hooks/useInboxData.test.ts
+  519abaabdbdae8de 284-307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "8365e90fd82ece996a6a8bdcd2346c3fd6397d29",
+  "prompts": {
+    "519abaabdbdae8de": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32afbb39-bf71-4966-ab1e-9e82d9c6ded3",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "HiOps <hiops@cvte.com>",
+      "messages": [],
+      "total_additions": 35,
+      "total_deletions": 7,
+      "accepted_lines": 35,
+      "overriden_lines": 0
+    }
+  }
+}
